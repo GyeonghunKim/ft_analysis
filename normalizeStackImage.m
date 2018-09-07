@@ -1,4 +1,4 @@
-function norm_stacked_image = normalizeStackImage(stacked_peak, subsize)
+function norm_stacked_image = normalizeStackImage(stacked_peak, sub_size)
     norm_stacked_image = zeros(size(stacked_peak));
     for x = sub_size+1:511-sub_size
         for y = sub_size+1:511-sub_size
