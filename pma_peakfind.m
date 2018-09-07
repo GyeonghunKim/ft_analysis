@@ -3,44 +3,10 @@ clear all;
 %% import file
 
 c = "/media/ghkim/HDD1/smb/fret-tracking/9_06_analysis";
-addpath(c)
-file_name = strcat(c, "/","hel2.pma");
 
-fid_pma = fopen(file_name,'r');
-file_info=dir(file_name);
+peak = findPeakFromPMA(c, "hel2.pma");
 
-ysize=fread(fid_pma,1,'int16'); 
-xsize=fread(fid_pma,1,'int16');
-    
-film_length=(file_info.bytes-4)/xsize/ysize;
-    
-
-%% find peak frame by frame
-
-peak = zeros(2,1);
-for i=1:film_length
-    
-    one_frame = fread(fid_pma,[ysize,xsize], 'uint8');
-    figure(1)
-    imagesc(one_frame');
-    peak = [peak;FastPeakFind(one_frame')];
-    title(sprintf('%d',i));
-    colormap(hot);
-    drawnow
-    if mod(i,100) == 1
-        disp(sprintf('%d/%d',i,film_length));
-    end
-end
-
-
-%% peak stack
-
-stacked_peak = zeros(512);
-for i = 3:length(peak)/2
-    stacked_peak(peak(2*i-1), peak(2*i)) = stacked_peak(peak(2*i-1), peak(2*i)) + 1;
-end
-
-
+stacked_peak = stackPeak(peak);
 
 %% normalize stacked peak
 sub_size = 10;
