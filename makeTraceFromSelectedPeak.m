@@ -1,4 +1,4 @@
-function [trace, subimage] = makeTraceFromSelectedPeak(c, filename, real_peak)
+function [trace, subimage] = makeTraceFromSelectedPeak(c, filename, real_peak,sub_size)
     file_name = strcat(c, "/", filename);
     fclose('all');
     fid_pma = fopen(file_name,'r');
