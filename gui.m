@@ -22,7 +22,7 @@ function varargout = gui(varargin)
 
 % Edit the above text to modify the response to help gui
 
-% Last Modified by GUIDE v2.5 07-Sep-2018 16:56:37
+% Last Modified by GUIDE v2.5 08-Sep-2018 21:50:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,9 +54,23 @@ function gui_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for gui
 handles.output = hObject;
-
+addpath(cd);
+cd('/media/ghkim/HDD1/smb/fret-tracking')
+global c;
+global filename;
+[filename,c] = uigetfile('*.pma');
+addpath(c);
 % Update handles structure
 guidata(hObject, handles);
+axes(handles.axes1)
+peak = findPeakFromPMA(c, filename, handles);
+stacked_peak = stackPeak(peak);
+global sub_size
+sub_size = 10;
+global norm_stacked_image;
+norm_stacked_image = normalizeStackImage(stacked_peak, sub_size);
+
+
 
 % UIWAIT makes gui wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
@@ -79,6 +93,18 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+global norm_stacked_image
+global sub_size
+global real_peak
+sub_size = 10;
+p = findLocalMaximaWithMask(norm_stacked_image);
+thre_inper = get(handles.edit3,'String');
+real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size, thre_inper);
+hold off;
+image(norm_stacked_image');
+hold on;
+plot(real_peak(:,2), real_peak(:,1), 'wo');
+set(handles.edit1, 'String', num2str(length(real_peak)));
 
 
 function edit1_Callback(hObject, eventdata, handles)
@@ -108,28 +134,18 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global trace
+global subimage
+global c
+global filename
+global real_peak
+[trace, subimage] = makeTraceFromSelectedPeak(c, filename, real_peak, 4); 
 
+axes(handles.axes2)
+plot(trace(1,:));
+axes(handles.axes3)
+imagesc(subimage(:,:,1,1));
 
-% --- Executes on slider movement.
-function slider1_Callback(hObject, eventdata, handles)
-% hObject    handle to slider1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function slider1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to slider1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
 
 
 % --- Executes on button press in pushbutton3.
@@ -138,6 +154,11 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+cur_spot = str2double(get(handles.edit2,'String'));
+set(handles.edit2, 'String', num2str(cur_spot-1));
+pushbutton8_Callback(hObject, eventdata, handles)
+
+
 
 % --- Executes on button press in pushbutton4.
 function pushbutton4_Callback(hObject, eventdata, handles)
@@ -145,13 +166,22 @@ function pushbutton4_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+cur_spot = str2double(get(handles.edit2,'String'));
+set(handles.edit2, 'String', num2str(cur_spot+1));
+pushbutton8_Callback(hObject, eventdata, handles)
+
+
+
 
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton5 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
+% handles    structure with handles and user data (seeg GUIDATA)
+global subimage
+cur_spot = str2double(get(handles.edit2,'String'));
+cur_spot = str2double(get(handles.edit2,'String'));
+imagesc(subimage(:,:,cur_spot, cur_frame));
 
 
 function edit2_Callback(hObject, eventdata, handles)
@@ -174,3 +204,91 @@ function edit2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --------------------------------------------------------------------
+function Untitled_1_Callback(hObject, eventdata, handles)
+% hObject    handle to Untitled_1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit3_Callback(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit3 as text
+%        str2double(get(hObject,'String')) returns contents of edit3 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit4_Callback(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit4 as text
+%        str2double(get(hObject,'String')) returns contents of edit4 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit4_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton6.
+function pushbutton6_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+cur_frame = str2double(get(handles.edit4,'String'));
+set(handles.edit4, 'String', num2str(cur_frame-1));
+pushbutton5_Callback(hObject, eventdata, handles)
+
+
+
+% --- Executes on button press in pushbutton7.
+function pushbutton7_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton7 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+cur_frame = str2double(get(handles.edit4,'String'));
+set(handles.edit4, 'String', num2str(cur_frame+1));
+pushbutton5_Callback(hObject, eventdata, handles)
+
+
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton8 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global trace
+cur_spot = str2double(get(handles.edit2,'String'));
+axes(handles.axes2);
+plot(trace(cur_spot,:));
+
+
+
