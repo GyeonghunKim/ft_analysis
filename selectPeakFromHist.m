@@ -1,7 +1,6 @@
-function real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size)
+function real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size, thre_inper)
     sub_rad = 3;
-    thre_inper = 1.5;
-    
+
     I = zeros(1, 1);
     k = 1;
     for i = 1:length(p)/2
@@ -16,8 +15,6 @@ function real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size)
     [his, bin] = hist(I, floor(length(p)/200));
     histf = fit(bin', his', 'exp1');
 
-
-    thre_inper = 1.5;
     % NN = 2;
     % thre = thre_inper * (histf.b1+histf.c1*NN);
     tau = -1/histf.b;
