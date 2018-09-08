@@ -18,7 +18,7 @@ p = findLocalMaximaWithMask(norm_stacked_image);
 
 %% peak select
 
-real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size);
+real_peak = selectPeakFromHist(norm_stacked_image, p, sub_size, 5);
 hold off;
 imagesc(norm_stacked_image);
 hold on;
