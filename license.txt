@@ -1,3 +1,6 @@
+license for FastPeakFind
+
+
 Copyright (c) 2012, natan
 All rights reserved.
 
